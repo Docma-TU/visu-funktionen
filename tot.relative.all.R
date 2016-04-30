@@ -1,0 +1,84 @@
+library(tmT) # Laden des tmT Pakets
+setwd("L:\\DoCMA\\Spiegel") # Pfad anpassen.
+
+load("Spiegel-Art.Rdata")
+load("../LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
+
+
+tot.relative.all(x = result, ldaID = ldaID, corpus = SpiegelArt,
+                 file = "../LDA-Sozialismus/tot_all.pdf",
+                 Tnames = 1:10, smooth = 0.1)
+#tot.relative.all returns a pdf document with topic over time curves
+#for each topic, normalizing by the number of words in the entire corpus for each month.
+
+# x: LDA result object
+# ldaID: Character vector including IDs of the texts.
+# corpus: Clear corpus (X-Art) to extract monthly sums and metadata from.
+# file: Name of the pdf file.
+# Tnames: Label for the topics
+# smooth: How much the output should be smoothed. Set to 0 for no smoothing.
+
+tot.relative.all <- function(x, ldaID, corpus, file, Tnames = 1:10, smooth = 0.05, ...){
+
+#pakete laden
+require("reshape2")
+require("plyr")
+require("ggplot2")
+
+####normierung vorbereiten####
+(cat("Monatssummen im Gesamtcorpus zum normieren berechnen..\n"))
+#daten jedes artikels in art
+normdates <- corpus$meta$datum[match(names(corpus$text), corpus$meta$id)]
+normdates <- round_date(normdates, "month")
+#worte jedes artikels zählen
+normsums <- sapply(corpus$text, function(x) length(x))
+#worte pro monat aufsummieren
+normsums <- aggregate(normsums, by = list(date = normdates), FUN = sum)
+
+#####Datensatz zum visualisieren vorbereiten####
+(cat("Datensatz zum visualisieren vorbereiten..\n"))
+
+tmp <- data.frame(t(x$document_sums))
+names(tmp) <- Tnames
+
+#datum aller dokumente, die visualisiert werden sollen:
+tmpdate <- corpus$meta$datum[match(ldaID, corpus$meta$id)]
+#auf monate runden:
+tmpdate <- round_date(tmpdate, "month")
+#einzelwerte für die monate aufsummieren
+tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
+
+#normieren mit normsums
+normsums <- normsums[match(tmp$date, normsums$date),]
+tmp[2:11] <- apply(tmp[2:11],2,function(y) y/normsums$x)
+
+#datensatz für ggplot nach tidy data prinzip aufbereiten
+tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
+tmp <- plyr::arrange(tmp, date, topic)
+
+#limits für den plot: auf nächste 5 jahre gerundet
+roundyear <- 5*round(year(range(tmpdate))/5)
+roundyear <- as.Date(paste0(roundyear, "-01-01"))
+
+#plotten
+(cat("Plotten..\n"))
+pdf(file, width = 12)
+
+for(i in levels(tmp$topic)){
+      
+      p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
+            if(smooth == 0) geom_line(colour = "black")
+            else stat_smooth(span = 0.05, se = FALSE, size = 0.5, colour = "black")  } +
+            scale_x_date(expand = c(0.05, 0), limits = roundyear) +
+            theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
+                  axis.ticks = element_blank(),
+                  axis.text.x = element_text(angle = -330, hjust = 1)) + {
+                        if(all(Tnames == 1:10)) ggtitle(paste("Topic", i))
+                        else ggtitle(i) } +
+            xlab('') + ylab('Anteil des Topics am Gesamtcorpus')
+      print(p)
+      
+}
+dev.off()
+
+}
