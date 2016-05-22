@@ -1,4 +1,4 @@
-library(tmT) # Laden des tmT Pakets
+'library(tmT) # Laden des tmT Pakets
 setwd("L:\\DoCMA\\Spiegel") # Pfad anpassen.
 
 load("Spiegel-Art.Rdata")
@@ -7,7 +7,7 @@ load("../LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 
 tot.relative.all(x = result, ldaID = ldaID, corpus = SpiegelArt,
                  file = "../LDA-Sozialismus/tot_all.pdf",
-                 Tnames = 1:10, smooth = 0.1)
+                 Tnames = 1:10, smooth = 0.1)'
 #tot.relative.all returns a pdf document with topic over time curves
 #for each topic, normalizing by the number of words in the entire corpus for each month.
 
@@ -18,12 +18,22 @@ tot.relative.all(x = result, ldaID = ldaID, corpus = SpiegelArt,
 # Tnames: Label for the topics
 # smooth: How much the output should be smoothed. Set to 0 for no smoothing.
 
-tot.relative.all <- function(x, ldaID, corpus, file, Tnames = 1:10, smooth = 0.05, ...){
+tot.relative.all <- function(x, ldaID, corpus, file, Tnames = top.topic.words(x$topics,1), smooth = 0.05, ...){
 
 #pakete laden
-require("reshape2")
-require("plyr")
-require("ggplot2")
+      install.required <- function(required.packages) {
+            'new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
+            if(!length(new.packages)){
+                  opt <- options(show.error.messages=FALSE)
+                  on.exit(options(opt))
+                  stop()
+            }
+            inst <- readline(paste("Do you want to install required packages:", new.packages, "[y|n]: "))
+            if(inst == "y") install.packages(new.packages)
+            else stop("Required packages not installed")'
+            for(x in required.packages) require(x,character.only = T)
+      }
+install.required(c("reshape2","plyr","ggplot2"))
 
 ####normierung vorbereiten####
 (cat("Monatssummen im Gesamtcorpus zum normieren berechnen..\n"))
@@ -50,7 +60,7 @@ tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
 
 #normieren mit normsums
 normsums <- normsums[match(tmp$date, normsums$date),]
-tmp[2:11] <- apply(tmp[2:11],2,function(y) y/normsums$x)
+tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
 
 #datensatz für ggplot nach tidy data prinzip aufbereiten
 tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
@@ -73,7 +83,7 @@ for(i in levels(tmp$topic)){
             theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
                   axis.ticks = element_blank(),
                   axis.text.x = element_text(angle = -330, hjust = 1)) + {
-                        if(all(Tnames == 1:10)) ggtitle(paste("Topic", i))
+                        if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Top topic word:", i))
                         else ggtitle(i) } +
             xlab('') + ylab('Anteil des Topics am Gesamtcorpus')
       print(p)

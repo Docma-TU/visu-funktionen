@@ -1,13 +1,10 @@
-library(tmT) # Laden des tmT Pakets
+'library(tmT) # Laden des tmT Pakets
 setwd("L:\\DoCMA") # Pfad anpassen.
-
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
-
-
 tot.relative.sub(x = result, ldaID = ldaID, meta = meta,
                  file = "LDA-Sozialismus/tot.pdf", Tnames = letters[1:10], smooth = 0.1)
-
+'
 #tot.relative.sub returns a pdf document with topic over time curves
 #for each topic, normalizing by the number of words in the subcorpus for each month.
 
@@ -18,13 +15,23 @@ tot.relative.sub(x = result, ldaID = ldaID, meta = meta,
 # Tnames: Label for the topics
 # smooth: How much the output should be smoothed. Set to 0 for no smoothing.
 
-tot.relative.sub <- function(x, ldaID, meta, file, Tnames = 1:10, smooth = 0.05, ...){
+tot.relative.sub <- function(x, ldaID, meta, file, Tnames = top.topic.words(x$topics,1), smooth = 0.05, ...){
 
 #pakete laden
-require("reshape2")
-require("plyr")
-require("ggplot2")
-
+      install.required <- function(required.packages) {
+            'new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
+            if(!length(new.packages)){
+                  opt <- options(show.error.messages=FALSE)
+                  on.exit(options(opt))
+                  stop()
+            }
+            inst <- readline(paste("Do you want to install required packages:", new.packages, "[y|n]: "))
+            if(inst == "y") install.packages(new.packages)
+            else stop("Required packages not installed")'
+            for(x in required.packages) require(x,character.only = T)
+      }
+      install.required(c("reshape2","plyr","ggplot2"))
+      
 #data frame erstellen, jedes dokument eine zeile
 tmp <- data.frame(t(x$document_sums))
 names(tmp) <- Tnames
@@ -43,7 +50,7 @@ tsums <- aggregate(tsums, by = list(tmpdate), FUN = sum)[,2]
 
 
 #normieren mit tsums
-tmp[,2:11] <- apply(tmp[,2:11],2,function(x) x/tsums)
+tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(x) x/tsums)
 
 #datensatz für ggplot nach tidy data prinzip aufbereiten
 tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
@@ -65,7 +72,7 @@ p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
       theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
             axis.ticks = element_blank(),
             axis.text.x = element_text(angle = -330, hjust = 1)) + {
-      if(all(Tnames == 1:10)) ggtitle(paste("Topic", i))
+      if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Top topic word:", i))
       else ggtitle(i) } +
       xlab('') + ylab('Anteil des Topics am Subcorpus')
 print(p)
