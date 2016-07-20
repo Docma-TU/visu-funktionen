@@ -24,15 +24,6 @@ tot.heat.sub <- function(x, ldaID, meta, file, Tnames = top.topic.words(x$topics
 
 #pakete laden
       install.required <- function(required.packages) {
-            'new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
-            if(!length(new.packages)){
-                  opt <- options(show.error.messages=FALSE)
-                  on.exit(options(opt))
-                  stop()
-            }
-            inst <- readline(paste("Do you want to install required packages:", new.packages, "[y|n]: "))
-            if(inst == "y") install.packages(new.packages)
-            else stop("Required packages not installed")'
             for(x in required.packages) require(x,character.only = T)
       }
 install.required(c("reshape2","dplyr","ggplot2","ggdendro","gtable","grid"))

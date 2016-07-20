@@ -1,10 +1,10 @@
-'library(tmT) # Laden des tmT Pakets
-setwd("L:\\DoCMA") # Pfad anpassen.
+library(tmT) # Laden des tmT Pakets
+setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
 tot.relative.sub(x = result, ldaID = ldaID, meta = meta,
-                 file = "LDA-Sozialismus/tot.pdf", Tnames = letters[1:10], smooth = 0.1)
-'
+                 file = "LDA-Sozialismus/tot.pdf", smooth = 0.1)
+
 #tot.relative.sub returns a pdf document with topic over time curves
 #for each topic, normalizing by the number of words in the subcorpus for each month.
 
@@ -62,9 +62,9 @@ roundyear <- as.Date(paste0(roundyear, "-01-01"))
 
 #plotten
 pdf(file, width = 12)
-
+topicnr <- 0
 for(i in levels(tmp$topic)){
-
+topicnr <- topicnr + 1
 p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
       if(smooth == 0) geom_line(colour = "black")
       else stat_smooth(span = 0.05, se = FALSE, size = 0.5, colour = "black")  } +
@@ -72,8 +72,8 @@ p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
       theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
             axis.ticks = element_blank(),
             axis.text.x = element_text(angle = -330, hjust = 1)) + {
-      if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Top topic word:", i))
-      else ggtitle(i) } +
+      if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Topic Nr.", topicnr, "/ Top topic word:", i))
+      else ggtitle(paste0("Topic Nr. ", topicnr, ": ",i)) } +
       xlab('') + ylab('Anteil des Topics am Subcorpus')
 print(p)
 

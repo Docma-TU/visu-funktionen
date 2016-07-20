@@ -68,8 +68,9 @@ for(n in 1:length(f)){
       tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
       
       #datensatz für ggplot nach tidy data prinzip aufbereiten
-      tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
-      tmp <- plyr::arrange(tmp, date, topic)
+      tmp <- tmp %>% gather(topic, docsum, 2:length(tmp), factor_key = TRUE) %>%
+        filter(grepl(paste(topics, collapse = "$|"), topic)) %>%
+        arrange(date, topic)
       
       #limits für den plot: auf nächste 5 jahre gerundet
       roundyear <- 5*round(year(range(tmpdate))/5)
@@ -88,8 +89,8 @@ for(n in 1:length(f)){
                   theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
                         axis.ticks = element_blank(),
                         axis.text.x = element_text(angle = -330, hjust = 1)) + {
-                              if(all(Tnames[[n]] == top.topic.words(result$topics,1))) ggtitle(paste("Top topic word:", i))
-                              else ggtitle(i) } +
+                  if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Topic Nr.", topicnr, "/ Top topic word:", i))
+                  else ggtitle(paste0("Topic Nr. ", topicnr, ": ",i)) } +
                   xlab('') + ylab('Anteil des Topics am Gesamtcorpus')
             print(p)
       }

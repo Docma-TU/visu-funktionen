@@ -33,7 +33,7 @@ tot.relative.all <- function(x, ldaID, corpus, file, Tnames = top.topic.words(x$
             else stop("Required packages not installed")'
             for(x in required.packages) require(x,character.only = T)
       }
-install.required(c("reshape2","plyr","ggplot2"))
+install.required(c("tidyr","dplyr","ggplot2"))
 
 ####normierung vorbereiten####
 (cat("Monatssummen im Gesamtcorpus zum normieren berechnen..\n"))
@@ -63,8 +63,9 @@ normsums <- normsums[match(tmp$date, normsums$date),]
 tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
 
 #datensatz für ggplot nach tidy data prinzip aufbereiten
-tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
-tmp <- plyr::arrange(tmp, date, topic)
+tmp <- tmp %>% gather(topic, docsum, 2:length(tmp), factor_key = TRUE) %>%
+  filter(grepl(paste(topics, collapse = "$|"), topic)) %>%
+  arrange(date, topic)
 
 #limits für den plot: auf nächste 5 jahre gerundet
 roundyear <- 5*round(year(range(tmpdate))/5)
@@ -83,8 +84,8 @@ for(i in levels(tmp$topic)){
             theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
                   axis.ticks = element_blank(),
                   axis.text.x = element_text(angle = -330, hjust = 1)) + {
-                        if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Top topic word:", i))
-                        else ggtitle(i) } +
+            if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Topic Nr.", topicnr, "/ Top topic word:", i))
+            else ggtitle(paste0("Topic Nr. ", topicnr, ": ",i)) } +
             xlab('') + ylab('Anteil des Topics am Gesamtcorpus')
       print(p)
       
