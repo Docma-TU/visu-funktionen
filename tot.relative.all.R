@@ -1,3 +1,10 @@
+#TO DO:
+# auf englisch übersetzen
+# dependencies checken
+# input checken
+# round_date zu floor_date ändern!
+
+
 'library(tmT) # Laden des tmT Pakets
 setwd("L:\\DoCMA\\Spiegel") # Pfad anpassen.
 
@@ -22,15 +29,6 @@ tot.relative.all <- function(x, ldaID, corpus, file, Tnames = top.topic.words(x$
 
 #pakete laden
       install.required <- function(required.packages) {
-            'new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
-            if(!length(new.packages)){
-                  opt <- options(show.error.messages=FALSE)
-                  on.exit(options(opt))
-                  stop()
-            }
-            inst <- readline(paste("Do you want to install required packages:", new.packages, "[y|n]: "))
-            if(inst == "y") install.packages(new.packages)
-            else stop("Required packages not installed")'
             for(x in required.packages) require(x,character.only = T)
       }
 install.required(c("tidyr","dplyr","ggplot2"))

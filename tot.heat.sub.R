@@ -1,3 +1,14 @@
+#TO DO:
+# auf englisch übersetzen
+# dependencies checken
+# input checken
+# round_date zu floor_date ändern!
+# heat map an dendrogramm anpassen! --> stackoverflow align ggplot2 plots vertically
+
+#testen: zeilen- und spaltensummen = 0
+#option: absolute differenz normieren mit mittelwert des topicanteils über gesamte zeit
+#gather durch expand.grid ersetzen: keys einzeln einfügen, cbind values
+
 'library(tmT) # Laden des tmT Pakets
 setwd("L:\\DoCMA") # Pfad anpassen.
 
@@ -9,9 +20,9 @@ tot.heat.sub(x = result, ldaID = ldaID, meta = meta,
              Tnames = row.names(mtcars)[1:10],
              date_breaks = "1 year")
 '
-#tot.heat.sub returns a pdf document with a heat map showing the deviations
-#of each topic from its mean share in all topics,
-#normalizing by the number of words in the subcorpus for each month.
+# tot.heat.sub returns a pdf document with a heat map showing the deviations
+# of each topic from its mean share in all topics,
+# normalizing by the number of words in the subcorpus for each month.
 
 # x: LDA result object
 # ldaID: Character vector including IDs of the texts.
