@@ -1,83 +1,91 @@
+'
+install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL)
 library(tmT) # Laden des tmT Pakets
 setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
-tot.relative.sub(x = result, ldaID = ldaID, meta = meta,
-                 file = "LDA-Sozialismus/tot.pdf", smooth = 0.1)
-
+tots.relative.sub(x = result, ldaID = ldaID, meta = meta,
+file = "LDA-Sozialismus/tot2.pdf", smooth = 0.1)
+'
 #tot.relative.sub returns a pdf document with topic over time curves
 #for each topic, normalizing by the number of words in the subcorpus for each month.
 
-# x: LDA result object
-# ldaID: Character vector including IDs of the texts.
-# meta: The meta data for the texts.
-# file: Name of the pdf file.
+# topics: Zu plottende Themen
+# x:      LDA result object
+# ldaID:  Character vector including IDs of the texts.
+# meta:   The meta data for the texts.
+# file:   Name of the pdf file.
+# pages:  if true, topic curves are printed to separate pages. if false, all selected topics are printed on one pdf page
 # Tnames: Label for the topics
 # smooth: How much the output should be smoothed. Set to 0 for no smoothing.
 
-tot.relative.sub <- function(x, ldaID, meta, file, Tnames = top.topic.words(x$topics,1), smooth = 0.05, ...){
+#dependencies: ggplot2, magrittr
+library("magrittr")
 
-#pakete laden
-      install.required <- function(required.packages) {
-            'new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
-            if(!length(new.packages)){
-                  opt <- options(show.error.messages=FALSE)
-                  on.exit(options(opt))
-                  stop()
-            }
-            inst <- readline(paste("Do you want to install required packages:", new.packages, "[y|n]: "))
-            if(inst == "y") install.packages(new.packages)
-            else stop("Required packages not installed")'
-            for(x in required.packages) require(x,character.only = T)
-      }
-      install.required(c("reshape2","plyr","ggplot2"))
+tots.relative.sub <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta, file, pages=TRUE, Tnames = top.topic.words(x$topics,1), smooth = 0.05, ...){
+      #create data frame. rows: documents, columns: topics
+      tmp <- data.frame(t(x$document_sums))
       
-#data frame erstellen, jedes dokument eine zeile
-tmp <- data.frame(t(x$document_sums))
-names(tmp) <- Tnames
+      #calculate row sums: word count for each document
+      tsums <- apply(tmp, 1, sum)
+      #get dates for all documents to be visualized
+      tmpdate <- meta$datum[match(ldaID, meta$id)]
+      #round to months
+      tmpdate <- floor_date(tmpdate, "month")
+      
+      #sum row sums and document-levels values to months
+      tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
+      tsums <- aggregate(tsums, by = list(tmpdate), FUN = sum)[,2]
+      
+      #normalize by tsums (word counts for each month)
+      tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(x) x/tsums)
+      
+      #convert dataframe to tidy data format for ggplot
+      tmp <- cbind(expand.grid(tmp$date, colnames(tmp)[2:length(tmp)]), unlist(tmp[,2:length(tmp)]))
+      names(tmp) <- c("date", "topic","docsum")
+      tmp <- tmp[grepl(paste0(paste(topics, collapse = "$|"),"$"), tmp$topic),]
+      tmp <- tmp[with(tmp, order(date, topic)), ]
+      
+      #adjust topic names to those given in argument
+      levels(tmp$topic)[1:length(levels(tmp$topic)) %in% topics] <- Tnames
+      
+      #plot limits: round to next 5 years
+      roundyear <- 5*round(year(range(tmpdate))/5)
+      roundyear <- as.Date(paste0(roundyear, "-01-01"))
 
-#zeilensummen berechnen (für jedes dokument anzahl wörter)
-tsums <- apply(tmp, 1, sum)
-
-#datum aller dokumente, die visualisiert werden sollen:
-tmpdate <- meta$datum[match(ldaID, meta$id)]
-#auf monate runden:
-tmpdate <- round_date(tmpdate, "month")
-
-#zeilensummen und einzelwerte für die monate aufsummieren
-tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
-tsums <- aggregate(tsums, by = list(tmpdate), FUN = sum)[,2]
-
-
-#normieren mit tsums
-tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(x) x/tsums)
-
-#datensatz für ggplot nach tidy data prinzip aufbereiten
-tmp <- reshape2::melt(tmp, id = "date", variable.name = "topic", value.name = "docsum")
-tmp <- plyr::arrange(tmp, date, topic)
-
-#limits für den plot: auf nächste 5 jahre gerundet
-roundyear <- 5*round(year(range(tmpdate))/5)
-roundyear <- as.Date(paste0(roundyear, "-01-01"))
-
-#plotten
-pdf(file, width = 12)
-topicnr <- 0
-for(i in levels(tmp$topic)){
-topicnr <- topicnr + 1
-p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
-      if(smooth == 0) geom_line(colour = "black")
-      else stat_smooth(span = 0.05, se = FALSE, size = 0.5, colour = "black")  } +
-      scale_x_date(expand = c(0.05, 0), limits = roundyear) +
-      theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
-            axis.ticks = element_blank(),
-            axis.text.x = element_text(angle = -330, hjust = 1)) + {
-      if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Topic Nr.", topicnr, "/ Top topic word:", i))
-      else ggtitle(paste0("Topic Nr. ", topicnr, ": ",i)) } +
-      xlab('') + ylab('Anteil des Topics am Subcorpus')
-print(p)
-
-}
-dev.off()
-
+      #plotting
+    if(pages){
+      pdf(file, width = 12)
+      topicnr <- 0
+      for(i in levels(tmp$topic)){
+        topicnr <- topicnr + 1
+        p <- ggplot(tmp[tmp$topic == i,], aes(x = date, y = docsum)) + {
+          if(smooth == 0) geom_line(colour = "black")
+          else stat_smooth(span = smooth, se = FALSE, size = 0.5, colour = "black")  } +
+          scale_x_date(expand = c(0.05, 0), limits = roundyear) +
+          theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
+                axis.ticks = element_blank(),
+                axis.text.x = element_text(angle = -330, hjust = 1)) + {
+                  if(all(Tnames == top.topic.words(x$topics,1))) ggtitle(paste("Topic Nr.", topicnr, "/ Top topic word:", i))
+                  else ggtitle(paste0("Topic Nr. ", topicnr, ": ",i)) } +
+          xlab('') + ylab('Share of Topic in Subcorpus')
+        print(p)
+      }
+      dev.off()
+    }
+    if(!pages){
+      pdf(file, width = 12)
+      p <- ggplot(tmp, aes(x = date, y = docsum, colour = topic)) + {
+        if(smooth == 0) geom_line(colour = "black")
+        else stat_smooth(span = smooth, se = FALSE, size = 0.5)  } +
+        scale_x_date(expand = c(0.05, 0), limits = roundyear) +
+        scale_colour_discrete(name="Topic") +
+        theme(panel.background = element_rect(fill = '#e2e8ed', colour = '#e2e8ed'),
+              axis.ticks = element_blank(),
+              axis.text.x = element_text(angle = -330, hjust = 1)) +
+        ggtitle(paste("Share of Topics:", paste0(paste(topics, Tnames, sep = ": "), collapse = ", "), "in Subcorpus")) +
+        xlab('') + ylab('Share in Subcorpus')
+      print(p)
+      dev.off()
+    }
 }
