@@ -4,26 +4,32 @@ library(tmT) # Laden des tmT Pakets
 setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
-tots.relative.sub(x = result, ldaID = ldaID, meta = meta,
-file = "LDA-Sozialismus/tot2.pdf", smooth = 0.1)
+library(ggplot2)
+debug("tot.relative")
+tot.relative(x = result, ldaID = ldaID, meta = meta,file = "LDA-Sozialismus/tot2.pdf")
 '
-#tot.relative.sub returns a pdf document with topic over time curves
-#for each topic, normalizing by the number of words in the subcorpus for each month.
+#dependencies: ggplot2
 
-# topics: Zu plottende Themen
-# x:      LDA result object
-# ldaID:  Character vector including IDs of the texts.
-# meta:   The meta data for the texts.
-# file:   Name of the pdf file.
-# pages:  if true, topic curves are printed to separate pages. if false, all selected topics are printed on one pdf page
-# Tnames: Label for the topics
-# smooth: How much the output should be smoothed. Set to 0 for no smoothing.
-
-#dependencies: ggplot2, magrittr
-library("magrittr")
-
-tots.relative.sub <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, corpus = NULL,
-                              file, pages=TRUE, Tnames = top.topic.words(x$topics,1), smooth = 0.05, ...){
+#' Plotting Topics over Time relative to Corpus
+#' 
+#' Creates a pdf including a plot for each topic. For each topic the share of
+#' words per month would be plotted. Shares can be calculated on subcorpus or corpus level.
+#' 
+#' @param topics Numbers of the topics to be plotted. Defaults to all topics.
+#' @param x LDA result object.
+#' @param ldaID Character vector including IDs of the texts.
+#' @param meta The meta data for the texts.
+#' @param file Name of the pdf file.
+#' @param pages Should the topics be plotted on separate pages (true) or on one page (false). Defaults to true.
+#' @param Tnames Vector with labels for the topics.
+#' @param smooth How much the output should be smoothed. Set to 0 to disable smoothing.
+#' @return A pdf.
+#' @author Lars Koppers (<koppers@@statistik.tu-dortmund.de>)
+#' @keywords ~kwd1 ~kwd2
+#' @examples ##
+#' @export tot.relative
+tot.relative <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, corpus = NULL,
+                         file, pages=TRUE, Tnames = top.topic.words(x$topics,1), smooth = 0.05){
     #check if arguments are properly specified
     if((is.null(meta) & is.null(corpus))|(!is.null(meta) & !is.null(corpus))){
         stop("Please specify either 'meta' for analysis on subcorpus level or 'corpus' to compare values to entire corpus")
@@ -37,8 +43,6 @@ tots.relative.sub <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta =
     if(!is.null(corpus)) tmpdate <- corpus$meta$datum[match(ldaID, corpus$meta$id)]
     #round to months
     tmpdate <- floor_date(tmpdate, "month")
-    #sum document-levels values to months
-    tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
     
     ### Prepare normalization data ###
     if(!is.null(meta)){
@@ -46,7 +50,7 @@ tots.relative.sub <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta =
         #calculate row sums: word count for each document
         normsums <- apply(tmp, 1, sum)
         #sum row sums to months
-        normsums <- aggregate(normsums, by = list(tmpdate), FUN = sum)
+        normsums <- aggregate(normsums, by = list(date = tmpdate), FUN = sum)
     }
     if(!is.null(corpus)){
         (cat("Calculate monthly sums in corpus for normalization..\n"))
@@ -60,7 +64,9 @@ tots.relative.sub <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta =
         #tidy up
         rm(normdates)
     }
-    
+    #sum document-levels values to months
+    tmp <- aggregate(tmp, by = list(date = tmpdate), FUN = sum)
+
     ### Normalize data ###
     normsums <- normsums[match(tmp$date, normsums$date),]
     tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
