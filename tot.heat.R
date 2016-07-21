@@ -1,14 +1,12 @@
-#testen: zeilen- und spaltensummen = 0
 #option: absolute differenz normieren mit mittelwert des topicanteils über gesamte zeit
 
 '
-library("ggdendro")
-library("ggplot2")
+install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL, dependencies=T)
 library(tmT) # Laden des tmT Pakets
 setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
-
+library(ggplot2)
 tot.heat.sub(topics = c(1:5,8), x = result, ldaID = ldaID, meta = meta,
              file = "LDA-Sozialismus/tot-heat-test.pdf",
              Tnames = row.names(mtcars)[1:10],

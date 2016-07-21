@@ -1,15 +1,3 @@
-'
-install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL, dependencies=T)
-library(tmT) # Laden des tmT Pakets
-setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
-load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
-load("Spiegel/Spiegel-meta.Rdata")
-library(ggplot2)
-debug("tot.relative")
-tot.relative(x = result, ldaID = ldaID, meta = meta,file = "LDA-Sozialismus/tot2.pdf")
-'
-#dependencies: ggplot2
-
 #' Plotting Topics over Time relative to Corpus
 #' 
 #' Creates a pdf including a plot for each topic. For each topic the share of
