@@ -1,5 +1,5 @@
 '
-install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL)
+install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL, dependencies=T)
 library(tmT) # Laden des tmT Pakets
 setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
@@ -18,7 +18,8 @@ tot.relative(x = result, ldaID = ldaID, meta = meta,file = "LDA-Sozialismus/tot2
 #' @param topics Numbers of the topics to be plotted. Defaults to all topics.
 #' @param x LDA result object.
 #' @param ldaID Character vector including IDs of the texts.
-#' @param meta The meta data for the texts.
+#' @param meta Specify to analyze subcorpus. The meta data for the texts.
+#' @param corpus Specify to analyze entiere corous. The data used for normalization.
 #' @param file Name of the pdf file.
 #' @param pages Should the topics be plotted on separate pages (true) or on one page (false). Defaults to true.
 #' @param Tnames Vector with labels for the topics.
@@ -70,7 +71,6 @@ tot.relative <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL
     ### Normalize data ###
     normsums <- normsums[match(tmp$date, normsums$date),]
     tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
-    
     
     #convert dataframe to tidy data format for ggplot
     tmp <- cbind(expand.grid(tmp$date, colnames(tmp)[2:length(tmp)]), unlist(tmp[,2:length(tmp)]))
