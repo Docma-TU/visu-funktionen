@@ -13,7 +13,7 @@
 #' @param Tnames Vector with labels for the topics.
 #' @param smooth How much the output should be smoothed. Set to 0 to disable smoothing.
 #' @return A pdf.
-#' @author Lars Koppers (<koppers@@statistik.tu-dortmund.de>)
+#' @author Kira Schacht (<kira.schacht@@tu-dortmund.de>)
 #' @keywords ~kwd1 ~kwd2
 #' @examples ##
 #' @export tot.relative
