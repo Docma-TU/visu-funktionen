@@ -6,9 +6,9 @@ library(tmT) # Laden des tmT Pakets
 setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
 load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
 load("Spiegel/Spiegel-meta.Rdata")
-library(ggplot2)
+library(ggplot2, ggdendro, gtable, grid)
 tot.heat.sub(topics = c(1:5,8), x = result, ldaID = ldaID, meta = meta,
-             file = "LDA-Sozialismus/tot-heat-test.pdf",
+             file = "tot-heat-test.pdf",
              Tnames = row.names(mtcars)[1:10],
              date_breaks = "1 year")
 '

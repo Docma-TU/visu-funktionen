@@ -17,6 +17,7 @@
 #' @keywords ~kwd1 ~kwd2
 #' @examples ##
 #' @export tot.relative
+
 tot.relative <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, corpus = NULL,
                          file, pages=TRUE, Tnames = top.topic.words(x$topics,1), smooth = 0.05){
     #check if arguments are properly specified
