@@ -1,38 +1,26 @@
-#option: absolute differenz normieren mit mittelwert des topicanteils über gesamte zeit
-'
-install.packages("/media/kira/TOSHIBA EXT/DoCMA/tmT/0.1/tmT_0.1.tar.gz", repos=NULL, dependencies=T)
-library(tmT) # Laden des tmT Pakets
-setwd("/media/kira/TOSHIBA EXT/DoCMA") # Pfad anpassen.
-load("LDA-Sozialismus/Sozlda-k10i20b70s24601.Rdata")
-load("Spiegel/Spiegel-meta.Rdata")
-tot.heat.sub(topics = c(1:5,8), x = result, ldaID = ldaID, meta = meta,
-file = "LDA-Sozialismus/tot-heat-test.pdf",
-Tnames = row.names(mtcars)[1:10],
-date_breaks = "1 year")
-'
-#dependencies: gplots
 #' Plotting Topics over Time relative to Corpus
 #' 
 #' Creates a pdf including a heat map. For each topic, the heat map shows the deviation of 
 #' its current share from its mean share. Shares can be calculated on subcorpus or corpus level.
 #' Shares can be calculated in absolute deviation from the mean or relative to the mean of the topic to account for different topic strengths.
 #' 
-#' @param topics Numbers of the topics to be plotted. Defaults to all topics.
+#' @param topics Numeric vector containing the numbers of the topics to be plotted. Defaults to all topics.
 #' @param x LDA result object.
 #' @param ldaID Character vector including IDs of the texts.
 #' @param meta Specify to analyze subcorpus. The meta data for the texts.
 #' @param corpus Specify to analyze entiere corous. The data used for normalization.
-#' @param file Name of the pdf file.
-#' @param pages Should the topics be plotted on separate pages (true) or on one page (false). Defaults to true.
-#' @param Tnames Vector with labels for the topics.
+#' @param norm Logical. Should the values be normalized by the mean topic share to account for differently sized topics? Defaults to FALSE.
+#' @param file A character vector containing the name of the pdf file.
+#' @param Tnames Character vector with labels for the topics.
 #' @param date_breaks Which years should be shown on the x axis. Can be one of "1 year","5 years" or "10 years".
 #' @return A pdf.
 #' @author Lars Koppers (<koppers@@statistik.tu-dortmund.de>)
 #' @keywords ~kwd1 ~kwd2
 #' @examples ##
 #' @export tot.heat
+
 tot.heat <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, corpus = NULL,
-                     file, Tnames = top.topic.words(x$topics,1), date_breaks = "1 year"){
+                     norm = FALSE, file, Tnames = top.topic.words(x$topics,1), date_breaks = "1 year"){
       
       #create data frame. rows: documents, columns: topics
       tmp <- data.frame(t(x$document_sums))
@@ -69,26 +57,22 @@ tot.heat <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, co
       ### Normalize data ###
       normsums <- normsums[match(tmp$date, normsums$date),]
       tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
+      #cell values are now shares in document x of topic y
       
       #filter for topics to be plotted
       tmp <- tmp[,c(TRUE,grepl(paste0(paste(topics, collapse = "$|"),"$"), colnames(tmp)[2:length(tmp)]))]
       
-      '
-      #dendrogramm berechnen
-      (cat("Determine distances between topics..\n"))
-      dd <- as.matrix(t(tmp[,2:length(tmp)]))
-      dd <- as.dendrogram(hclust(dist(dd)))
-      ord <- order.dendrogram(dd)
-      ddata <- dendro_data(dd)
-      '
-      #get mean for each topic over entire time
+      #get mean for each topic over entire time: column means
       tmeans <- apply(tmp[2:length(tmp)], 2, mean)
-      #calculate absolute distance to mean
+      #calculate absolute distance to mean. normalize distance with mean if specified
       for(i in 1:nrow(tmp)){
             tmp[i,2:length(tmp)] <- tmp[i,2:length(tmp)] - tmeans
+            if(norm == TRUE){
+                  tmp[i,2:length(tmp)] <- tmp[i,2:length(tmp)] / tmeans
+            }
       }
-      
-      #breaks bestimmen
+
+      #set breaks for x axis labels
       if(date_breaks =="1 year")   breaks <- as.character(unique(tmpdate))
       if(date_breaks =="5 years"){
             breaks <- as.character(unique(tmpdate))
@@ -99,30 +83,24 @@ tot.heat <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, co
             breaks[!grepl("^[0-9]{3}0-", unique(tmpdate))] <- ""
       }
 
-      #plotten
-      (cat("Plotten..\n"))
-      ?rainbow
-      pdf("xy.pdf", width = 56/(3+(0.1*nrow(x$topics))))
+      #plot heat map
+      (cat("Plotting..\n"))
+
+      pdf(file, width = 56/(3+(0.1*nrow(x$topics))))
       heatmap.2(t(as.matrix(tmp[-1])), Colv = NA, dendrogram = 'row',
-                #legende an, histogramm und abweichungslinien aus
+                #enable legend, disable histogram and deviation traces
                 trace = 'none', density.info = 'none', key = T,
-                #farbe
+                #colours
                 col=colorRampPalette(c("#0571b0", "#ffffff","#ca0020"))(50),
-                #einstellungen für legende
+                #settings for legend
                 keysize=1, key.par=list(mar=c(3,0,3,7), bty="n", fg="white"), key.title = NA, key.xlab = NA,
-                #layout: titel, dann legende, dann dendro und heatmap
+                #layout: title, then legend, then dendrogram and heat map
                 lmat=rbind(c(0,3,3,3), c(0,5,4,5),c(2,1,1,1)), lhei=c(0.1,0.18,0.72), lwid=c(0.15,0.1,0.65,0.1),
-                #zellen der heatmap durch white space trennen
+                #separate heat map cells with white space
                 rowsep = 1:(ncol(tmp)-1), colsep = 1:nrow(tmp),
-                #labels der heat map konfigurieren
+                #configure labels for heat map
                 labRow = Tnames, labCol = breaks, margins = c(8,12),
                 cexRow = 1.2, cexCol = 1.2, srtCol = 45,
-                main = "Abweichung der Topics von ihrem Durchschnittsanteil")
+                main = ifelse(norm == T, "Normalized deviation of topic shares from mean topic shares","Absolute deviation of topic shares from mean topic shares"))
       dev.off()
-
-
-      
-      pdf(file, width = 56/(3+(0.1*nrow(x$topics))))
-      dev.off()
-      
 }

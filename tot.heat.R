@@ -25,7 +25,6 @@ tot.heat.sub(topics = c(1:5,8), x = result, ldaID = ldaID, meta = meta,
 #' @param meta Specify to analyze subcorpus. The meta data for the texts.
 #' @param corpus Specify to analyze entiere corous. The data used for normalization.
 #' @param file Name of the pdf file.
-#' @param pages Should the topics be plotted on separate pages (true) or on one page (false). Defaults to true.
 #' @param Tnames Vector with labels for the topics.
 #' @param date_breaks Which years should be shown on the x axis. Can be one of "1 year","5 years" or "10 years".
 #' @return A pdf.
