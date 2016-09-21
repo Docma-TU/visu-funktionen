@@ -6,15 +6,15 @@
 #' 
 #' @param topics Numeric vector containing the numbers of the topics to be plotted. Defaults to all topics.
 #' @param x LDA result object.
-#' @param ldaID Character vector including IDs of the texts.
-#' @param meta Specify to analyze subcorpus. The meta data for the texts.
-#' @param corpus Specify to analyze entiere corous. The data used for normalization.
+#' @param ldaID Character vector containing IDs of the texts.
+#' @param meta Optional. Specify to analyze subcorpus. The meta data for the texts. One of meta or corpus has to be specified.
+#' @param corpus Optional. Specify to analyze entire copous. The data used for normalization. One of meta or corpus has to be specified.
 #' @param norm Logical. Should the values be normalized by the mean topic share to account for differently sized topics? Defaults to FALSE.
-#' @param file A character vector containing the name of the pdf file.
+#' @param file Character vector containing the path and name for the pdf output file.
 #' @param Tnames Character vector with labels for the topics.
 #' @param date_breaks Which years should be shown on the x axis. Can be one of "1 year","5 years" or "10 years".
 #' @return A pdf.
-#' @author Lars Koppers (<koppers@@statistik.tu-dortmund.de>)
+#' @author Kira Schacht (<kira.schacht@@tu-dortmund.de>)
 #' @keywords ~kwd1 ~kwd2
 #' @examples ##
 #' @export tot.heat
@@ -101,6 +101,6 @@ tot.heat <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, co
                 #configure labels for heat map
                 labRow = Tnames, labCol = breaks, margins = c(8,12),
                 cexRow = 1.2, cexCol = 1.2, srtCol = 45,
-                main = ifelse(norm == T, "Normalized deviation of topic shares from mean topic shares","Absolute deviation of topic shares from mean topic shares"))
+                main = ifelse(norm == T, "Normalized Deviation of Topic Shares from Mean Topic Share","Absolute Deviation of Topic Shares from Mean Topic Share"))
       dev.off()
 }
