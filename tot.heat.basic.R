@@ -88,35 +88,39 @@ tot.heat <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, co
             tmp[i,2:length(tmp)] <- tmp[i,2:length(tmp)] - tmeans
       }
       
-      '#convert dataframe to tidy data format for ggplot
-      tmp <- cbind(expand.grid(tmp$date, colnames(tmp)[2:length(tmp)]), unlist(tmp[,2:length(tmp)]))
-      names(tmp) <- c("date", "topic","docsum")
-      tmp <- tmp[with(tmp, order(date, topic)), ]'
-      
-      #adjust topic names to those given in argument
-      #levels(tmp$topic)[1:length(levels(tmp$topic)) %in% topics] <- Tnames
-      ##adjust factor levels to have the same order as the dendrogram
-      #tmp$topic <- factor(tmp$topic, levels(tmp$topic)[ord])
-      
-      library(gplots)
-      pdf("xy.pdf", width=14)
-      heatmap.2(t(as.matrix(tmp[-1])), Colv = NA, dendrogram = 'row',
-                notecol = 'black', notecex = 0.8, trace = 'none', density.info = 'none',
-                key = T, keysize=1, key.par=list(mar=c(3,0,3,0), bty="n", fg="white"), key.title = NA, key.xlab = NA,
-                lmat=rbind(c(0,3,0), c(0,4,0),c(2, 1,0)), lhei=c(0.1,0.2,0.7), lwid=c(0.15, 0.85,0.05),
-                rowsep = 1:(ncol(tmp)-1), colsep = 1:nrow(tmp),
-                labRow = Tnames, labCol = tmp[,1], margins = c(8,3),
-                cexRow = 1.2, cexCol = 1.2, srtCol = 45,
-                main = "Heatmap der Topics")
-      dev.off()
-
       #breaks bestimmen
-      if(date_breaks =="1 year")   breaks <- unique(tmpdate)
-      if(date_breaks =="5 years")  breaks <- as.Date(paste0(unique(5*round(year(tmpdate)/5)), "-01-01"))
-      if(date_breaks =="10 years") breaks <- as.Date(paste0(unique(10*round(year(tmpdate)/10)), "-01-01"))
-      
+      if(date_breaks =="1 year")   breaks <- as.character(unique(tmpdate))
+      if(date_breaks =="5 years"){
+            breaks <- as.character(unique(tmpdate))
+            breaks[!grepl("^[0-9]{3}[05]-", unique(tmpdate))] <- ""
+      }
+      if(date_breaks == "10 years"){
+            breaks <- as.character(unique(tmpdate))
+            breaks[!grepl("^[0-9]{3}0-", unique(tmpdate))] <- ""
+      }
+
       #plotten
       (cat("Plotten..\n"))
+      ?rainbow
+      pdf("xy.pdf", width = 56/(3+(0.1*nrow(x$topics))))
+      heatmap.2(t(as.matrix(tmp[-1])), Colv = NA, dendrogram = 'row',
+                #legende an, histogramm und abweichungslinien aus
+                trace = 'none', density.info = 'none', key = T,
+                #farbe
+                col=colorRampPalette(c("#0571b0", "#ffffff","#ca0020"))(50),
+                #einstellungen für legende
+                keysize=1, key.par=list(mar=c(3,0,3,7), bty="n", fg="white"), key.title = NA, key.xlab = NA,
+                #layout: titel, dann legende, dann dendro und heatmap
+                lmat=rbind(c(0,3,3,3), c(0,5,4,5),c(2,1,1,1)), lhei=c(0.1,0.18,0.72), lwid=c(0.15,0.1,0.65,0.1),
+                #zellen der heatmap durch white space trennen
+                rowsep = 1:(ncol(tmp)-1), colsep = 1:nrow(tmp),
+                #labels der heat map konfigurieren
+                labRow = Tnames, labCol = breaks, margins = c(8,12),
+                cexRow = 1.2, cexCol = 1.2, srtCol = 45,
+                main = "Abweichung der Topics von ihrem Durchschnittsanteil")
+      dev.off()
+
+
       
       pdf(file, width = 56/(3+(0.1*nrow(x$topics))))
       dev.off()
