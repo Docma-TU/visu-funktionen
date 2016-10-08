@@ -18,7 +18,7 @@
 #' @examples ##
 #' @export tot.relative
 
-tot.relative <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL, corpus = NULL,
+tot.relative <- function(x, topics = 1:nrow(x$document_sums), ldaID, meta = NULL, corpus = NULL,
                          file, pages=TRUE, Tnames = top.topic.words(x$topics,1), smooth = 0.05){
     #check if arguments are properly specified
     if((is.null(meta) & is.null(corpus))|(!is.null(meta) & !is.null(corpus))){
@@ -62,10 +62,12 @@ tot.relative <- function(topics = 1:nrow(x$document_sums), x, ldaID, meta = NULL
     tmp[,2:length(tmp)] <- apply(tmp[,2:length(tmp)],2,function(y) y/normsums$x)
     #cell values are now shares in document x of topic y
     
+    #filter for topics to be plotted
+    tmp <- tmp[, c(1,topics+1)]
+    
     #convert dataframe to tidy data format for ggplot
     tmp <- cbind(expand.grid(tmp$date, colnames(tmp)[2:length(tmp)]), unlist(tmp[,2:length(tmp)]))
     names(tmp) <- c("date", "topic","docsum")
-    tmp <- tmp[grepl(paste0(paste(topics, collapse = "$|"),"$"), tmp$topic),]
     tmp <- tmp[with(tmp, order(date, topic)), ]
     
     #adjust topic names to those given in argument
